@@ -4,23 +4,21 @@ import Browser
 import Html exposing (Html)
 import Html.Attributes exposing (src)
 
-import Element exposing (Element, row, column, el, text)
+import Element exposing (..)
 import Element.Events exposing (onClick)
 import Array
+
+import Grid
 
 
 --- GRID ---
 
 type CellValue = X | O
-type alias Grid = Array.Array (Array.Array (Maybe CellValue))
+type alias Board = Grid.Grid (Maybe CellValue)
 
 
-emptyGrid : Grid
-emptyGrid = Array.fromList
-  [ Array.fromList [Nothing, Nothing, Nothing]
-  , Array.fromList [Nothing, Nothing, Nothing]
-  , Array.fromList [Nothing, Nothing, Nothing]
-  ]
+emptyGrid : Board
+emptyGrid = Grid.square 3 Nothing
 
 
 viewRow r cells =
@@ -39,7 +37,9 @@ viewRow r cells =
 
 
 viewGrid rows =
-   column [] <| List.map2 viewRow [0, 1, 2] rows
+    el [width (px 500), height (px 600)]
+        <| column [padding 10, spacing 10]
+            <| List.map2 viewRow [0, 1, 2] rows
 
   
 
@@ -53,14 +53,14 @@ switchPlayer playa =
     PO -> PX
 
 type alias Model =
-    { grid: Grid
+    { board : Board
     , currentPlayer: Player
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {grid = emptyGrid, currentPlayer = PX}, Cmd.none )
+    ({board = emptyGrid, currentPlayer = PX}, Cmd.none)
 
 
 
@@ -74,25 +74,18 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update (Click row col) model =
   let
-      {grid, currentPlayer} = model
+      {board, currentPlayer} = model
       val = case currentPlayer of
         PX -> X
         PO -> O
-      mrow = Array.get row grid
-      ngrid = case mrow of
-        Nothing -> grid
-        Just row_ ->
-            case Array.get col row_ of
-              Nothing -> grid
-              Just cell ->
-                case cell of
-                  Nothing -> Array.set row (Array.set col (Just val) row_) grid
-                  Just a -> grid
+
+      updatedBoard = Grid.set (col, row) (Just val) model.board
+      updatedModel = {board = updatedBoard, currentPlayer = switchPlayer currentPlayer} 
   in
-      if model.grid == ngrid then
-        ( model, Cmd.none )
+      if model.board == updatedBoard then
+        (model, Cmd.none)
       else
-        ({grid = ngrid, currentPlayer = switchPlayer currentPlayer}, Cmd.none)
+        (updatedModel, Cmd.none)
 
 
 
@@ -102,9 +95,7 @@ update (Click row col) model =
 view : Model -> Html Msg
 view model =
   Element.layout [] <|
-    viewGrid <|
-      Array.toList <|
-        Array.map Array.toList model.grid
+    viewGrid <| Grid.toList model.board
 
 
 
