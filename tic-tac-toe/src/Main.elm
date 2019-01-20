@@ -21,7 +21,7 @@ type Player = PX | PO
 
 type CellValue = X | O
 
-type GameState = Playing Player | Finish Player
+type GameState = Playing Player | Finish (Maybe Player)
 
 
 type alias Board =
@@ -69,6 +69,17 @@ winingForValue board val =
         ListExtra.anyTrue <| List.map allSameForConsideration allConsiderations
 
 
+maybeToBool : Maybe a -> Bool
+maybeToBool ma =
+    case ma of
+        Nothing -> False
+        Just a -> True
+
+
+isEnd : Board -> Bool
+isEnd = Grid.toList >> List.map ListExtra.sequence >> ListExtra.sequence >> maybeToBool
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update (Set (x, y)) model =
     case model.gameState of
@@ -93,7 +104,9 @@ update (Set (x, y)) model =
                 if model.board == updatedBoard then
                     (model, Cmd.none)
                 else if winingForValue updatedBoard cellVal then
-                    ({board = updatedBoard, gameState = Finish currentPlayer}, Cmd.none)
+                    ({board = updatedBoard, gameState = Finish (Just currentPlayer)}, Cmd.none)
+                else if isEnd updatedBoard then
+                    ({board = updatedBoard, gameState = Finish Nothing}, Cmd.none)
                 else
                     ({board = updatedBoard, gameState = Playing switchedPlayer}, Cmd.none)
 
@@ -161,13 +174,19 @@ view {board, gameState} =
         viewWonMsg currentPlayer =
             el [Font.color (rgba255 119 110 101 1), Font.size 100] (text <| "Won:  " ++ viewPlayer currentPlayer)
 
+        viewDrawMsg =
+            el [Font.color (rgba255 119 110 101 1), Font.size 100] (text "Draw")
+
         topBanner =
             case gameState of
                 Playing currentPlayer ->
                     viewCurrentPlayer currentPlayer
 
-                Finish currentPlayer ->
+                Finish (Just currentPlayer) ->
                     viewWonMsg currentPlayer
+
+                Finish (Nothing) ->
+                    viewDrawMsg
     in
         Element.layout [] <|
             column []
