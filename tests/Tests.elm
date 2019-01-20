@@ -3,8 +3,24 @@ module Tests exposing (..)
 import Test exposing (..)
 import Expect
 
+import ListExtra
+
 
 -- Check out http://package.elm-lang.org/packages/elm-community/elm-test/latest to learn more about testing in Elm!
+
+
+lol =
+    [ [1, 2, 3]
+    , [4, 5, 6]
+    , [7, 8, 9]
+    ]
+
+lolT =
+    [ [1, 4, 7]
+    , [2, 5, 8]
+    , [3, 6, 9]
+    ]
+
 
 
 all : Test
@@ -16,7 +32,7 @@ all =
         , test "String.left" <|
             \_ ->
                 Expect.equal "a" (String.left 1 "abcdefg")
-        , test "This test should fail" <|
+        , test "Transposition" <|
             \_ ->
-                Expect.fail "failed as expected!"
+                Expect.equal (Just lolT) (ListExtra.transpose lol)
         ]
